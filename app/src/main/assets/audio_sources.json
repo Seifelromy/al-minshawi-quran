@@ -1,0 +1,32 @@
+[
+  {
+    "id": "minshawi_murattal",
+    "nameArabic": "المنشاوي (مرتل)",
+    "nameEnglish": "Al-Minshawi (Murattal)",
+    "urlTemplate": "https://server11.mp3quran.net/minsh/{padded}.mp3"
+  },
+  {
+    "id": "minshawi_mujawwad",
+    "nameArabic": "المنشاوي (مجود)",
+    "nameEnglish": "Al-Minshawi (Mujawwad)",
+    "urlTemplate": "https://server11.mp3quran.net/minsh_mjwd/{padded}.mp3"
+  },
+  {
+    "id": "quran_com",
+    "nameArabic": "موقع القرآن الكريم",
+    "nameEnglish": "Quran.com CDN",
+    "urlTemplate": "https://audio.qurancdn.com/reciters/3/{padded}.mp3"
+  },
+  {
+    "id": "every_ayah",
+    "nameArabic": "آية آية",
+    "nameEnglish": "EveryAyah Server",
+    "urlTemplate": "https://everyayah.com/data/Al_Minshawi_Murattal_128kbps/{padded}.mp3"
+  },
+  {
+    "id": "custom_json",
+    "nameArabic": "مصدر مخصص",
+    "nameEnglish": "Custom JSON API",
+    "urlTemplate": "https://archive.org/download/muhammad-siddiq-al-minshawi-quran/{padded}.mp3"
+  }
+]

@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "reciters": [
+    {
+      "id": "minshawi_murattal",
+      "reciter": "Muhammad Siddiq Al-Minshawi (Murattal)",
+      "audioUrlTemplate": "https://server11.mp3quran.net/minsh/{padded}.mp3",
+      "surahs": [
+        { "number": 1, "audioUrl": "https://server11.mp3quran.net/minsh/001.mp3" },
+        { "number": 2, "audioUrl": "https://server11.mp3quran.net/minsh/002.mp3" }
+      ]
+    },
+    {
+      "id": "minshawi_mujawwad",
+      "reciter": "Muhammad Siddiq Al-Minshawi (Mujawwad)",
+      "audioUrlTemplate": "https://server11.mp3quran.net/minsh_mjwd/{padded}.mp3",
+      "surahs": [
+        { "number": 1, "audioUrl": "https://server11.mp3quran.net/minsh_mjwd/001.mp3" }
+      ]
+    },
+    {
+      "id": "abdul_basit",
+      "reciter": "Abdul Basit",
+      "audioUrlTemplate": "https://server7.mp3quran.net/basit/{padded}.mp3",
+      "surahs": [
+        { "number": 1, "audioUrl": "https://server7.mp3quran.net/basit/001.mp3" }
+      ]
+    },
+    {
+      "id": "hussary",
+      "reciter": "Al-Hussary",
+      "audioUrlTemplate": "https://server13.mp3quran.net/husr/{padded}.mp3",
+      "surahs": [
+        { "number": 1, "audioUrl": "https://server13.mp3quran.net/husr/001.mp3" }
+      ]
+    },
+    {
+      "id": "alafasy",
+      "reciter": "Mishary Alafasy",
+      "audioUrlTemplate": "https://server8.mp3quran.net/afs/{padded}.mp3",
+      "surahs": [
+        { "number": 1, "audioUrl": "https://server8.mp3quran.net/afs/001.mp3" }
+      ]
+    },
+    {
+      "id": "muaiqly",
+      "reciter": "Maher Al-Muaiqly",
+      "audioUrlTemplate": "https://server12.mp3quran.net/maher/{padded}.mp3",
+      "surahs": [
+        { "number": 1, "audioUrl": "https://server12.mp3quran.net/maher/001.mp3" }
+      ]
+    }
+  ]
+}

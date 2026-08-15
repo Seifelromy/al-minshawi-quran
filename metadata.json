@@ -1,0 +1,6 @@
+{
+  "name": "Al-Minshawi Quran",
+  "description": "Listen to the complete Quran recited by Sheikh Al-Minshawi with premium audio quality, background playback, and offline support.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
