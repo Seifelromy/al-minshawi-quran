@@ -411,7 +411,7 @@ class AudioPlaybackManager(
         }
     }
 
-    private fun getCandidateUrls(providerId: String, surahNumber: Int, defaultUrl: String): List<String> {
+    fun getCandidateUrls(providerId: String, surahNumber: Int, defaultUrl: String): List<String> {
         val padded = String.format("%03d", surahNumber)
         val candidates = mutableListOf<String>()
 

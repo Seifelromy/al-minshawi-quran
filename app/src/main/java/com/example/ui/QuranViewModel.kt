@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.net.HttpURLConnection
 import java.net.URL
 
 enum class AppLanguage {
@@ -246,58 +247,117 @@ class QuranViewModel(
         if (_downloadProgress.value.contains(surahId)) return // Already in progress
 
         _downloadProgress.value = _downloadProgress.value + (surahId to 0.01f)
+        val appContext = context.applicationContext
 
         viewModelScope.launch(Dispatchers.IO) {
+            var success = false
             try {
-                val urlString = surah.audioUrl
-                if (urlString.isBlank()) return@launch
+                // Same fallback sources the player uses, so a dead primary host doesn't break downloads
+                val candidates = playbackManager.getCandidateUrls(_activeReciterId.value, surahId, surah.audioUrl)
+                    .filter { it.isNotBlank() }
 
-                val url = URL(urlString)
-                val connection = url.openConnection()
-                connection.connect()
-                val fileLength = connection.contentLength
-
-                val dir = File(context.filesDir, "downloads")
+                val dir = File(appContext.filesDir, "downloads")
                 if (!dir.exists()) {
                     dir.mkdirs()
                 }
-
                 val destFile = File(dir, String.format("%03d.mp3", surahId))
-                
-                url.openStream().use { input ->
-                    destFile.outputStream().use { output ->
-                        val buffer = ByteArray(8192)
-                        var bytesRead: Int
-                        var bytesWritten: Long = 0
-                        var lastProgress = 0.01f
-                        var lastUpdateTime = System.currentTimeMillis()
-                        
-                        while (input.read(buffer).also { bytesRead = it } != -1) {
-                            output.write(buffer, 0, bytesRead)
-                            bytesWritten += bytesRead
-                            if (fileLength > 0) {
-                                val progress = bytesWritten.toFloat() / fileLength.toFloat()
-                                val currentTime = System.currentTimeMillis()
-                                if (progress - lastProgress >= 0.01f || currentTime - lastUpdateTime >= 100L) {
-                                    lastProgress = progress
-                                    lastUpdateTime = currentTime
-                                    withContext(Dispatchers.Main) {
-                                        _downloadProgress.value = _downloadProgress.value + (surahId to progress)
-                                    }
-                                }
+                val tempFile = File(dir, String.format("%03d.mp3.part", surahId))
+
+                for (urlString in candidates) {
+                    try {
+                        downloadToFile(urlString, tempFile) { progress ->
+                            withContext(Dispatchers.Main) {
+                                _downloadProgress.value = _downloadProgress.value + (surahId to progress)
                             }
                         }
+                        if (destFile.exists()) destFile.delete()
+                        if (!tempFile.renameTo(destFile)) {
+                            tempFile.copyTo(destFile, overwrite = true)
+                            tempFile.delete()
+                        }
+                        repository.saveDownload(surahId, destFile.absolutePath, destFile.length())
+                        success = true
+                        break
+                    } catch (e: Exception) {
+                        android.util.Log.w("QuranViewModel", "Download failed from $urlString", e)
+                        tempFile.delete()
                     }
                 }
-
-                repository.saveDownload(surahId, destFile.absolutePath, destFile.length())
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {
                 withContext(Dispatchers.Main) {
                     _downloadProgress.value = _downloadProgress.value - surahId
+                    if (!success) {
+                        val msg = if (_language.value == AppLanguage.ARABIC)
+                            "تعذر تحميل السورة، تحقق من الاتصال بالإنترنت"
+                        else
+                            "Download failed, please check your connection"
+                        android.widget.Toast.makeText(appContext, msg, android.widget.Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
+        }
+    }
+
+    private suspend fun downloadToFile(urlString: String, target: File, onProgress: suspend (Float) -> Unit) {
+        var currentUrl = urlString
+        var connection: HttpURLConnection
+        var redirects = 0
+        // Follow redirects manually (HttpURLConnection won't follow cross-protocol/host redirects reliably)
+        while (true) {
+            connection = (URL(currentUrl).openConnection() as HttpURLConnection).apply {
+                connectTimeout = 15_000
+                readTimeout = 30_000
+                instanceFollowRedirects = true
+                setRequestProperty("User-Agent", "Mozilla/5.0 (Android) QuranApp")
+            }
+            val code = connection.responseCode
+            if (code in 300..399 && redirects < 5) {
+                val location = connection.getHeaderField("Location")
+                connection.disconnect()
+                if (location.isNullOrBlank()) throw java.io.IOException("Redirect without location")
+                currentUrl = URL(URL(currentUrl), location).toString()
+                redirects++
+                continue
+            }
+            if (code != HttpURLConnection.HTTP_OK) {
+                connection.disconnect()
+                throw java.io.IOException("HTTP $code for $currentUrl")
+            }
+            break
+        }
+
+        try {
+            val fileLength = connection.contentLengthLong
+            connection.inputStream.use { input ->
+                target.outputStream().use { output ->
+                    val buffer = ByteArray(8192)
+                    var bytesRead: Int
+                    var bytesWritten = 0L
+                    var lastProgress = 0.01f
+                    var lastUpdateTime = System.currentTimeMillis()
+                    while (input.read(buffer).also { bytesRead = it } != -1) {
+                        output.write(buffer, 0, bytesRead)
+                        bytesWritten += bytesRead
+                        if (fileLength > 0) {
+                            val progress = bytesWritten.toFloat() / fileLength.toFloat()
+                            val now = System.currentTimeMillis()
+                            if (progress - lastProgress >= 0.01f || now - lastUpdateTime >= 100L) {
+                                lastProgress = progress
+                                lastUpdateTime = now
+                                onProgress(progress)
+                            }
+                        }
+                    }
+                    if (fileLength > 0 && bytesWritten < fileLength) {
+                        throw java.io.IOException("Incomplete download: $bytesWritten/$fileLength")
+                    }
+                    if (bytesWritten == 0L) throw java.io.IOException("Empty response")
+                }
+            }
+        } finally {
+            connection.disconnect()
         }
     }
 
